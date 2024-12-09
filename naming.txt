@@ -1,0 +1,28 @@
+Resource Name Length Limits
+Storage Account
+	•	3-24 characters
+	•	Lowercase letters and numbers only
+	•	Must be globally unique
+Resource Group
+	•	1-90 characters
+	•	Alphanumeric, underscore, parentheses, hyphen, period
+	•	Cannot end with period
+Virtual Network and Subnet
+	•	1-80 characters
+	•	Alphanumeric, dash, underscore, and period
+	•	Case-insensitive
+Network Security Group (NSG)
+	•	1-80 characters
+	•	Alphanumeric, dash, underscore, and period
+	•	Case-insensitive
+Resource Name Scope
+Resources can have either:
+	•	Global scope: Must be unique across all of Azure (like storage accounts)
+	•	Resource Group scope: Must be unique only within the resource group (like virtual networks)
+Additional Naming Considerations
+	•	Resource names must be unique within their scope
+	•	Some resources like virtual networks can share the same name if they’re in different resource groups
+	•	Each resource can have up to 50 tags with:
+	•	Tag key length: 512 characters
+	•	Tag value length: 256 characters
+Note: For Databricks, Key Vault, Firewall, and Route Table specific character limits are not provided in the search results.
