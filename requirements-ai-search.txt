@@ -1,0 +1,7 @@
+azure-search-documents>=11.4.0
+azure-core>=1.29.5
+azure-identity>=1.15.0
+python-dotenv>=1.0.0
+azure-ai-formrecognizer>=3.2.0
+azure-cognitiveservices-speech>=1.31.0
+azure-ai-vision-imageanalysis>=0.11.0
