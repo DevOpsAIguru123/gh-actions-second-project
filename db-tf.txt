@@ -1,0 +1,20 @@
+Subject: Issue with Databricks NCC Private Endpoint Creation via Terraform
+
+Dear [Recipient’s Name],
+
+I am encountering an issue while using Terraform to create a Databricks NCC private endpoint. The Terraform execution initiates the NCC private endpoint creation process, but the request eventually times out when calling the Databricks NCC API endpoint. However, after some time, I can see that the NCC private endpoint is successfully created in the Databricks admin portal, but Terraform does not capture this information in the state file.
+
+To troubleshoot this issue, I have already added the http_timeout_seconds parameter in the Databricks provider configuration, but this has not resolved the problem. Additionally, I found that the NCC private endpoint rules resource does not support timeout configuration, which limits my ability to control the waiting period for API responses.
+
+This creates an inconsistency where Terraform is unaware of the successfully created resource, leading to potential issues with future updates or resource management.
+
+Could you provide insights into:
+	1.	Expected NCC API behavior regarding response times for private endpoint creation.
+	2.	Whether there are any known delays or timeouts related to Terraform’s interaction with the NCC API.
+	3.	How to properly synchronize the Terraform state with the Databricks NCC private endpoint that was successfully created.
+	4.	Any potential workarounds given that the NCC private endpoint rules resource does not support timeout configuration.
+
+Please let me know if any additional logs or details would help diagnose this issue.
+
+Best regards,
+[Your Name]
