@@ -33,3 +33,9 @@ resource "azurerm_private_endpoint" "databricks_ui_api" {
     private_dns_zone_ids = [azurerm_private_dns_zone.databricks.id]
   }
 } 
+
+import {
+  to = databricks_mws_ncc_private_endpoint_rule.ncc_dbfs_storage_dfs_pe_prod
+  id = "5a5903b5-f4da-4d65-b302-6e77a95d3071/d8b12d62-3641-41c2-92ec-788cdfe77490"
+}
+
