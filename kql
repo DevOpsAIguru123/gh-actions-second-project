@@ -7,3 +7,31 @@ AzureDiagnostics
 AZFWNetworkRule
 | where Action == "Deny"
 | sort by TimeGenerated desc
+
+import requests
+import json
+
+DATADOG_API_KEY = "your_api_key_here"
+DATADOG_URL = f"https://http-intake.logs.datadoghq.com/v1/input/{DATADOG_API_KEY}"
+headers = {"Content-Type": "application/json"}
+
+def send_log_to_datadog(log):
+    payload = json.dumps(log)
+    response = requests.post(DATADOG_URL, headers=headers, data=payload)
+    if response.status_code != 200:
+        print("Error sending log:", response.text)
+
+# Example: Query logs from Unity Catalog system table
+logs_df = spark.sql("SELECT * FROM system.audit_logs WHERE timestamp >= current_timestamp() - interval 1 hour")
+logs = logs_df.collect()
+
+for row in logs:
+    # Convert the row to a dict or extract the fields you want
+    log_entry = {
+        "message": str(row),
+        "timestamp": row.timestamp.isoformat(),  # assuming row.timestamp is a datetime object
+        "ddsource": "databricks_unity_catalog",
+        "service": "databricks"
+    }
+    send_log_to_datadog(log_entry)
+
