@@ -1,0 +1,9 @@
+AzureDiagnostics
+| where Category == "AzureFirewallApplicationRule"
+| where Action_s == "Deny"
+| project TimeGenerated, SourceIp_s, DestinationIp_s, DestinationPort_d, Protocol_s, RuleCollection_s, Rule_s, WebCategory_s
+| order by TimeGenerated desc
+
+AZFWNetworkRule
+| where Action == "Deny"
+| sort by TimeGenerated desc
