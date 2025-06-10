@@ -1,0 +1,5 @@
+streamlit
+databricks-sdk=0.56.0
+databricks-sql-connector=4.0.3
+pandas
+python-dotenv
