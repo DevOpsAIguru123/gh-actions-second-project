@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Databricks Value Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The SPA is designed as a single-page dashboard with a fixed sidebar for navigation, mirroring the logical, multi-page narrative proposed in the source report. This structure allows the program manager to move from a high-level 'Executive Summary' to granular deep-dives into 'Financials', 'Operations', and 'Adoption & Impact'. This guided journey, combined with global filters, facilitates a seamless analytical workflow—from identifying an issue in the summary to investigating its root cause in a detailed section—all without leaving the page. This is more intuitive for data exploration than a linear report. -->
+    <!-- Visualization & Content Choices: Selections are based on the report's blueprint. KPIs use large text for immediate impact. Bar/Donut charts (Chart.js) compare cost breakdowns. A combo bar/line chart (Chart.js) shows trends against previous periods. Tables (HTML/Tailwind) present detailed, sortable data for job analysis. A scatter plot (Chart.js) reveals outliers in job performance. This mix of high-level visuals and granular tables, powered by interactive filtering, directly addresses the program manager's key questions about cost, efficiency, and ROI. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f7f4;
+            color: #3d3d3d;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-item.active {
+            background-color: #eaddd7;
+            color: #5f4c42;
+            font-weight: 600;
+        }
+        .kpi-card {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+    </style>
+</head>
+<body class="flex h-screen">
+
+    <aside class="w-64 bg-[#efebe9] text-[#5f4c42] p-4 flex-shrink-0 flex flex-col">
+        <h1 class="text-2xl font-bold mb-8">DB Value Hub</h1>
+        <nav class="flex flex-col space-y-2">
+            <a href="#summary" class="nav-item p-3 rounded-lg transition-colors duration-200 active">
+                <span class="mr-2">📊</span> Executive Summary
+            </a>
+            <a href="#financials" class="nav-item p-3 rounded-lg transition-colors duration-200">
+                <span class="mr-2">💰</span> Cost & Financials
+            </a>
+            <a href="#operations" class="nav-item p-3 rounded-lg transition-colors duration-200">
+                <span class="mr-2">⚙️</span> Operational Efficiency
+            </a>
+            <a href="#adoption" class="nav-item p-3 rounded-lg transition-colors duration-200">
+                <span class="mr-2">🚀</span> Adoption & Impact
+            </a>
+        </nav>
+        <div class="mt-auto">
+            <p class="text-xs text-[#795548]">Powered by System Tables</p>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col overflow-y-auto">
+        <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200 p-4 sticky top-0 z-10">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <h2 id="header-title" class="text-2xl font-semibold text-gray-800">Executive Summary</h2>
+                <div class="flex items-center space-x-4">
+                     <select class="p-2 border rounded-lg bg-white text-sm">
+                        <option>Last 30 Days</option>
+                        <option>Last 90 Days</option>
+                        <option>This Quarter</option>
+                    </select>
+                    <select class="p-2 border rounded-lg bg-white text-sm">
+                        <option>All Workspaces</option>
+                        <option>Workspace-Prod-1</option>
+                        <option>Workspace-Dev-1</option>
+                    </select>
+                    <select class="p-2 border rounded-lg bg-white text-sm">
+                        <option>All Projects</option>
+                        <option>Project Phoenix</option>
+                        <option>Data Science Initiative</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-4 md:p-8 flex-1">
+            
+            <section id="summary" class="content-section active">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="kpi-card text-center">
+                        <h3 class="text-sm font-medium text-gray-500">Total Spend (30d)</h3>
+                        <p class="text-4xl font-bold text-gray-800 mt-2">$125,430</p>
+                    </div>
+                    <div class="kpi-card text-center">
+                        <h3 class="text-sm font-medium text-gray-500">Active Users (30d)</h3>
+                        <p class="text-4xl font-bold text-gray-800 mt-2">478</p>
+                    </div>
+                    <div class="kpi-card text-center">
+                        <h3 class="text-sm font-medium text-gray-500">Top Cost Driver</h3>
+                        <p class="text-3xl font-semibold text-gray-800 mt-2 truncate">Project Phoenix</p>
+                    </div>
+                    <div class="kpi-card text-center">
+                        <h3 class="text-sm font-medium text-gray-500">Job Success Rate</h3>
+                        <p class="text-4xl font-bold text-green-600 mt-2">98.2%</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                         <h3 class="font-semibold mb-1">Cost Trend vs. Previous Period</h3>
+                         <p class="text-sm text-gray-500 mb-4">This chart shows daily spend for the current period against the previous one, answering "Are we spending more or less than before?".</p>
+                         <div class="chart-container"><canvas id="costTrendChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="font-semibold mb-1">Cost by Workload</h3>
+                        <p class="text-sm text-gray-500 mb-4">This chart shows the proportion of spend across products, answering "What are we using the platform for?".</p>
+                        <div class="chart-container"><canvas id="workloadChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border lg:col-span-2">
+                        <h3 class="font-semibold mb-1">Cost Breakdown by Project/Team</h3>
+                        <p class="text-sm text-gray-500 mb-4">This view attributes cost to business context. Click a bar to highlight it. In a fully interactive dashboard, this would filter other visuals.</p>
+                        <div class="chart-container" style="height: 400px; max-height:500px;"><canvas id="costByProjectChart"></canvas></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="financials" class="content-section">
+                <p class="text-gray-600 mb-6 max-w-4xl">This section provides the granular detail for rigorous financial management and cost attribution. It helps answer "Who is spending what?" and "Are our resources properly tagged for cost allocation?". A large "Unattributed Cost" signals a gap in your governance policy.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                     <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="font-semibold mb-4">Cost by Project & User</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-500">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">Project Name</th>
+                                        <th scope="col" class="px-6 py-3">Top User</th>
+                                        <th scope="col" class="px-6 py-3 text-right">DBUs</th>
+                                        <th scope="col" class="px-6 py-3 text-right">Cost (USD)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="bg-white border-b">
+                                        <td class="px-6 py-4 font-medium text-gray-900">Project Phoenix</td>
+                                        <td class="px-6 py-4">svc-prod-etl@org.com</td>
+                                        <td class="px-6 py-4 text-right">45,201</td>
+                                        <td class="px-6 py-4 text-right">$65,120</td>
+                                    </tr>
+                                    <tr class="bg-gray-50 border-b">
+                                        <td class="px-6 py-4 font-medium text-gray-900">Data Science Initiative</td>
+                                        <td class="px-6 py-4">jane.doe@org.com</td>
+                                        <td class="px-6 py-4 text-right">22,150</td>
+                                        <td class="px-6 py-4 text-right">$31,500</td>
+                                    </tr>
+                                    <tr class="bg-white border-b">
+                                        <td class="px-6 py-4 font-medium text-gray-900">Marketing Analytics</td>
+                                        <td class="px-6 py-4">john.smith@org.com</td>
+                                        <td class="px-6 py-4 text-right">10,500</td>
+                                        <td class="px-6 py-4 text-right">$15,810</td>
+                                    </tr>
+                                    <tr class="bg-gray-50 border-b">
+                                        <td class="px-6 py-4 font-medium text-gray-900">(tag absent)</td>
+                                        <td class="px-6 py-4">svc-dev-test@org.com</td>
+                                        <td class="px-6 py-4 text-right">8,900</td>
+                                        <td class="px-6 py-4 text-right text-red-500 font-bold">$13,000</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="font-semibold mb-4">Unattributed Cost</h3>
+                        <p class="text-sm text-gray-500 mb-4">This is spend from resources missing a `project_name` tag. Drive this number to zero.</p>
+                        <p class="text-5xl font-bold text-red-600 text-center mt-10">$13,000</p>
+                        <p class="text-lg text-gray-600 text-center mt-2">10.4% of Total Spend</p>
+                    </div>
+
+                    <div class="lg:col-span-3 bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="font-semibold mb-1">Cost by SKU (Databricks Product)</h3>
+                        <p class="text-sm text-gray-500 mb-4">See which specific services are driving cost over time. This helps understand the impact of adopting new features like Serverless or AI services.</p>
+                        <div class="chart-container"><canvas id="costBySkuChart"></canvas></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="operations" class="content-section">
+                <p class="text-gray-600 mb-6 max-w-4xl">This section equips you to identify waste and improve performance. Inefficient or failing jobs are a primary source of wasted spend. Use these views to find high-cost jobs, jobs with high failure rates, and performance outliers that are candidates for optimization.</p>
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="font-semibold mb-4">Most Expensive Jobs (Last 30d)</h3>
+                        <table class="w-full text-sm text-left text-gray-500">
+                           <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2">Job Name</th>
+                                    <th class="px-4 py-2 text-right">Total Cost</th>
+                                    <th class="px-4 py-2 text-right">Avg Cost/Run</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b">
+                                    <td class="px-4 py-2 font-medium"> hourly_customer_360_prod</td>
+                                    <td class="px-4 py-2 text-right">$15,230</td>
+                                    <td class="px-4 py-2 text-right">$21.15</td>
+                                </tr>
+                                <tr class="border-b bg-gray-50">
+                                    <td class="px-4 py-2 font-medium">daily_fraud_detection_model</td>
+                                    <td class="px-4 py-2 text-right">$8,100</td>
+                                    <td class="px-4 py-2 text-right">$270.00</td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="px-4 py-2 font-medium">nightly_dlt_bronze_to_silver</td>
+                                    <td class="px-4 py-2 text-right">$5,500</td>
+                                    <td class="px-4 py-2 text-right">$183.33</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="font-semibold mb-4">Highest Failure Rate Jobs (Last 30d)</h3>
+                         <table class="w-full text-sm text-left text-gray-500">
+                           <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2">Job Name</th>
+                                    <th class="px-4 py-2 text-right">Failure Rate</th>
+                                    <th class="px-4 py-2 text-right">Cost of Failures</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b">
+                                    <td class="px-4 py-2 font-medium">ext_api_ingest_unstable</td>
+                                    <td class="px-4 py-2 text-right text-red-500 font-bold">35%</td>
+                                    <td class="px-4 py-2 text-right text-red-500 font-bold">$2,150</td>
+                                </tr>
+                                <tr class="border-b bg-gray-50">
+                                    <td class="px-4 py-2 font-medium">ml_model_retraining_v3</td>
+                                    <td class="px-4 py-2 text-right text-red-500 font-bold">15%</td>
+                                    <td class="px-4 py-2 text-right text-red-500 font-bold">$950</td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="px-4 py-2 font-medium">hourly_customer_360_prod</td>
+                                    <td class="px-4 py-2 text-right">2%</td>
+                                    <td class="px-4 py-2 text-right">$304</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="font-semibold mb-1">Job Run Duration vs. Cost</h3>
+                        <p class="text-sm text-gray-500 mb-4">This scatter plot helps identify outliers. Jobs in the top-right are long-running and high-cost, making them prime candidates for performance tuning. Hover over points for details.</p>
+                        <div class="chart-container"><canvas id="jobPerformanceChart"></canvas></div>
+                    </div>
+                 </div>
+            </section>
+
+            <section id="adoption" class="content-section">
+                 <p class="text-gray-600 mb-6 max-w-4xl">This section elevates the focus from operations to strategic value. It helps answer "Who is using the platform?", "Are they staying engaged?", and "What are our most critical data assets?". This view connects platform activity to broader organizational impact and adoption.</p>
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="font-semibold mb-1">Active Users by Business Unit</h3>
+                        <p class="text-sm text-gray-500 mb-4">Shows the platform's reach across the organization. Wide adoption across departments indicates high strategic value.</p>
+                        <div class="chart-container"><canvas id="usersByBuChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="font-semibold mb-1">User Retention Cohorts</h3>
+                        <p class="text-sm text-gray-500 mb-4">Tracks the percentage of new users who remain active over subsequent months. Strong retention indicates the platform is valuable and "sticky".</p>
+                        <div class="chart-container"><canvas id="userRetentionChart"></canvas></div>
+                    </div>
+                    <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="font-semibold mb-4">Top 10 Critical Data Assets</h3>
+                        <p class="text-sm text-gray-500 mb-4">These tables are ranked by a "criticality score" based on reads and downstream dependencies. They are your organization's data crown jewels.</p>
+                        <table class="w-full text-sm text-left text-gray-500">
+                           <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2">Table Name</th>
+                                    <th class="px-4 py-2">Read Count</th>
+                                    <th class="px-4 py-2">Downstream Dependencies</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b">
+                                    <td class="px-4 py-2 font-medium">prod.gold.dim_customer</td>
+                                    <td class="px-4 py-2">15,820</td>
+                                    <td class="px-4 py-2">112</td>
+                                </tr>
+                                <tr class="border-b bg-gray-50">
+                                    <td class="px-4 py-2 font-medium">prod.gold.fct_sales</td>
+                                    <td class="px-4 py-2">12,100</td>
+                                    <td class="px-4 py-2">98</td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="px-4 py-2 font-medium">prod.silver.users</td>
+                                    <td class="px-4 py-2">8,500</td>
+                                    <td class="px-4 py-2">55</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                 </div>
+            </section>
+        </div>
+    </main>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const chartColors = {
+        primary: 'rgba(110, 83, 68, 0.8)',
+        primaryLight: 'rgba(110, 83, 68, 0.5)',
+        secondary: 'rgba(212, 175, 55, 0.8)',
+        accent: 'rgba(163, 171, 171, 0.8)',
+        accentLight: 'rgba(163, 171, 171, 0.5)',
+        gray: 'rgba(156, 163, 175, 0.8)',
+        background: '#f8f7f4',
+        text: '#3d3d3d'
+    };
+    
+    const chartDefaultOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    color: chartColors.text,
+                    font: {
+                        family: 'Inter'
+                    }
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.7)',
+                titleFont: {
+                    size: 14,
+                    family: 'Inter'
+                },
+                bodyFont: {
+                    size: 12,
+                    family: 'Inter'
+                }
+            }
+        },
+        scales: {
+            x: {
+                ticks: {
+                    color: chartColors.text,
+                    font: { family: 'Inter' },
+                    maxRotation: 0,
+                    autoSkip: true,
+                    autoSkipPadding: 20
+                },
+                grid: {
+                    display: false
+                }
+            },
+            y: {
+                ticks: {
+                    color: chartColors.text,
+                    font: { family: 'Inter' }
+                },
+                grid: {
+                    color: '#e5e7eb'
+                }
+            }
+        }
+    };
+    
+    function wrapLabels(label, maxWidth) {
+        const words = label.split(' ');
+        const lines = [];
+        let currentLine = '';
+
+        words.forEach(word => {
+            if ((currentLine + ' ' + word).length > maxWidth && currentLine.length > 0) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = (currentLine ? currentLine + ' ' : '') + word;
+            }
+        });
+        lines.push(currentLine);
+        return lines;
+    }
+    
+    const navLinks = document.querySelectorAll('.nav-item');
+    const contentSections = document.querySelectorAll('.content-section');
+    const headerTitle = document.getElementById('header-title');
+
+    const chartInstances = {};
+
+    function switchTab(hash) {
+        const targetHash = hash || '#summary';
+
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === targetHash) {
+                link.classList.add('active');
+                headerTitle.textContent = link.textContent.trim().substring(2);
+            } else {
+                link.classList.remove('active');
+            }
+        });
+
+        contentSections.forEach(section => {
+            if ('#' + section.id === targetHash) {
+                section.classList.add('active');
+            } else {
+                section.classList.remove('active');
+            }
+        });
+        
+        // Lazy load charts
+        loadChartsForTab(targetHash);
+    }
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetHash = e.currentTarget.getAttribute('href');
+            window.location.hash = targetHash;
+        });
+    });
+    
+    window.addEventListener('hashchange', () => switchTab(window.location.hash));
+    
+    function loadChartsForTab(tabId) {
+        switch (tabId) {
+            case '#summary':
+                renderCostTrendChart();
+                renderWorkloadChart();
+                renderCostByProjectChart();
+                break;
+            case '#financials':
+                renderCostBySkuChart();
+                break;
+            case '#operations':
+                renderJobPerformanceChart();
+                break;
+            case '#adoption':
+                renderUsersByBuChart();
+                renderUserRetentionChart();
+                break;
+        }
+    }
+
+    function renderCostTrendChart() {
+        const ctx = document.getElementById('costTrendChart');
+        if (!ctx || chartInstances.costTrendChart) return;
+        const labels = Array.from({ length: 30 }, (_, i) => `Day ${i + 1}`);
+        chartInstances.costTrendChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Current Period Cost',
+                        data: labels.map(() => Math.random() * 3000 + 1000),
+                        backgroundColor: chartColors.primary,
+                        borderColor: chartColors.primary,
+                        borderWidth: 1,
+                        order: 2
+                    },
+                    {
+                        label: 'Previous Period Cost',
+                        data: labels.map(() => Math.random() * 2500 + 800),
+                        backgroundColor: chartColors.accent,
+                        borderColor: chartColors.accent,
+                        type: 'line',
+                        tension: 0.4,
+                        order: 1
+                    }
+                ]
+            },
+            options: chartDefaultOptions
+        });
+    }
+
+    function renderWorkloadChart() {
+        const ctx = document.getElementById('workloadChart');
+        if (!ctx || chartInstances.workloadChart) return;
+        chartInstances.workloadChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Jobs', 'Delta Live Tables', 'SQL Warehouses', 'Model Serving', 'Other'],
+                datasets: [{
+                    label: 'Cost by Workload',
+                    data: [45, 25, 20, 8, 2],
+                    backgroundColor: [chartColors.primary, chartColors.secondary, chartColors.accent, '#bcaaa4', '#8d6e63'],
+                    borderColor: chartColors.background,
+                    borderWidth: 4
+                }]
+            },
+            options: { ...chartDefaultOptions, scales: { x: { display: false }, y: { display: false } } }
+        });
+    }
+
+    function renderCostByProjectChart() {
+        const ctx = document.getElementById('costByProjectChart');
+        if (!ctx || chartInstances.costByProjectChart) return;
+        const labels = ['Project Phoenix', 'Data Science Initiative', 'Marketing Analytics', 'Platform Engineering', 'Internal Tooling', 'Ad-hoc Analysis'];
+        chartInstances.costByProjectChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Cost ($)',
+                    data: [65120, 31500, 15810, 8500, 3200, 1300],
+                    backgroundColor: chartColors.primaryLight,
+                    borderColor: chartColors.primary,
+                    borderWidth: 1,
+                    hoverBackgroundColor: chartColors.primary
+                }]
+            },
+            options: { ...chartDefaultOptions, indexAxis: 'y', scales: { x: { grid: { display: true } }, y: { grid: { display: false } } } }
+        });
+    }
+
+    function renderCostBySkuChart() {
+        const ctx = document.getElementById('costBySkuChart');
+        if (!ctx || chartInstances.costBySkuChart) return;
+        const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+        chartInstances.costBySkuChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Jobs Compute', data: [5000, 5200, 4800, 5500], backgroundColor: chartColors.primary },
+                    { label: 'DLT Compute', data: [3000, 3100, 3300, 3200], backgroundColor: chartColors.secondary },
+                    { label: 'SQL Pro', data: [2000, 2200, 2100, 2400], backgroundColor: chartColors.accent },
+                    { label: 'Model Serving', data: [800, 950, 1100, 1000], backgroundColor: '#bcaaa4' },
+                ]
+            },
+            options: { ...chartDefaultOptions, scales: { x: { stacked: true }, y: { stacked: true } } }
+        });
+    }
+
+    function renderJobPerformanceChart() {
+        const ctx = document.getElementById('jobPerformanceChart');
+        if (!ctx || chartInstances.jobPerformanceChart) return;
+        chartInstances.jobPerformanceChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Job Runs',
+                    data: Array.from({ length: 50 }, () => ({
+                        x: Math.random() * 120, // Duration in minutes
+                        y: Math.random() * 100 // Cost in $
+                    })),
+                    backgroundColor: chartColors.primaryLight,
+                    borderColor: chartColors.primary
+                }]
+            },
+            options: { ...chartDefaultOptions, scales: { 
+                x: { ...chartDefaultOptions.scales.x, title: { display: true, text: 'Duration (minutes)' } }, 
+                y: { ...chartDefaultOptions.scales.y, title: { display: true, text: 'Cost ($)' } }
+            }}
+        });
+    }
+    
+    function renderUsersByBuChart() {
+        const ctx = document.getElementById('usersByBuChart');
+        if (!ctx || chartInstances.usersByBuChart) return;
+        const labels = ['Engineering', 'Data Science', 'Marketing', 'Finance', 'Sales', 'Product'];
+        chartInstances.usersByBuChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels.map(l => wrapLabels(l, 10)),
+                datasets: [{
+                    label: 'Active Users',
+                    data: [150, 85, 95, 60, 55, 33],
+                    backgroundColor: chartColors.primaryLight,
+                    borderColor: chartColors.primary,
+                    borderWidth: 1,
+                    hoverBackgroundColor: chartColors.primary
+                }]
+            },
+            options: { ...chartDefaultOptions, plugins: { legend: { display: false } } }
+        });
+    }
+
+    function renderUserRetentionChart() {
+        const ctx = document.getElementById('userRetentionChart');
+        if (!ctx || chartInstances.userRetentionChart) return;
+        chartInstances.userRetentionChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Month 0', 'Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5'],
+                datasets: [
+                    {
+                        label: 'Jan Cohort',
+                        data: [100, 85, 78, 75, 72, 70],
+                        borderColor: chartColors.primary,
+                        backgroundColor: 'rgba(110, 83, 68, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Feb Cohort',
+                        data: [100, 88, 82, 79, null, null],
+                        borderColor: chartColors.secondary,
+                        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    },
+                     {
+                        label: 'Mar Cohort',
+                        data: [100, 90, 85, null, null, null],
+                        borderColor: chartColors.accent,
+                        backgroundColor: 'rgba(163, 171, 171, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {...chartDefaultOptions, scales: { y: { ...chartDefaultOptions.scales.y, min: 0, max: 100, ticks: { callback: value => `${value}%` }}}}
+        });
+    }
+
+    // Initial load
+    switchTab(window.location.hash);
+});
+</script>
+</body>
+</html>
