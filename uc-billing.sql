@@ -12,7 +12,7 @@ create_table_sql = """
   )
 """
 
-# Define the main MERGE statement to upsert the monthly aggregated data.
+# Define the main MERGE statement with the corrected table and column names.
 merge_sql = """
   MERGE INTO your_catalog.your_schema.monthly_billing_summary AS target
   USING (
@@ -24,7 +24,7 @@ merge_sql = """
       u.sku_name,
       u.usage_unit,
       SUM(u.usage_quantity) as total_usage_quantity,
-      SUM(u.usage_quantity * p.price_per_unit) AS estimated_cost_usd
+      SUM(u.usage_quantity * p.pricing.default) AS estimated_cost_usd -- CORRECTED: Changed price column
     FROM
       system.billing.usage AS u
     JOIN
@@ -33,7 +33,7 @@ merge_sql = """
         AND u.usage_start_time >= p.price_start_time
         AND (u.usage_start_time < p.price_end_time OR p.price_end_time IS NULL)
     LEFT JOIN
-      system.account.workspaces AS ws
+      system.access.workspaces_latest AS ws -- CORRECTED: Changed workspace table name
         ON u.workspace_id = ws.workspace_id
     WHERE
       u.usage_start_time >= date_trunc('month', add_months(current_date(), -1))
@@ -73,10 +73,8 @@ merge_sql = """
     )
 """
 
-# 1. Execute the CREATE TABLE statement
+# Execute the SQL commands using spark.sql()
 spark.sql(create_table_sql)
-
-# 2. Execute the MERGE statement
 spark.sql(merge_sql)
 
-print("Billing aggregation complete and data has been merged into the summary table.")
+print("Billing aggregation complete with corrected table and column names.")
