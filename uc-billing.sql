@@ -73,8 +73,10 @@ merge_sql = """
     )
 """
 
-# Execute the SQL commands using spark.sql()
+# 1. Execute the CREATE TABLE statement
 spark.sql(create_table_sql)
+
+# 2. Execute the MERGE statement
 spark.sql(merge_sql)
 
-print("Billing aggregation complete.")
+print("Billing aggregation complete and data has been merged into the summary table.")
