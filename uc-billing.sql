@@ -12,7 +12,7 @@ create_table_sql = """
   )
 """
 
-# Define the main MERGE statement with the corrected table and column names.
+# Define the main MERGE statement to upsert all historical data for the specified workspaces.
 merge_sql = """
   MERGE INTO your_catalog.your_schema.monthly_billing_summary AS target
   USING (
@@ -24,7 +24,7 @@ merge_sql = """
       u.sku_name,
       u.usage_unit,
       SUM(u.usage_quantity) as total_usage_quantity,
-      SUM(u.usage_quantity * p.pricing.default) AS estimated_cost_usd -- CORRECTED: Changed price column
+      SUM(u.usage_quantity * p.pricing.default) AS estimated_cost_usd
     FROM
       system.billing.usage AS u
     JOIN
@@ -33,11 +33,10 @@ merge_sql = """
         AND u.usage_start_time >= p.price_start_time
         AND (u.usage_start_time < p.price_end_time OR p.price_end_time IS NULL)
     LEFT JOIN
-      system.access.workspaces_latest AS ws -- CORRECTED: Changed workspace table name
+      system.access.workspaces_latest AS ws
         ON u.workspace_id = ws.workspace_id
     WHERE
-      u.usage_start_time >= date_trunc('month', add_months(current_date(), -1))
-      AND u.usage_start_time < date_trunc('month', current_date())
+      u.workspace_id IN (12323444, 343434554) -- Filters for your specific workspaces
     GROUP BY
       1, 2, 3, 4, 5, 6
   ) AS source
@@ -77,4 +76,4 @@ merge_sql = """
 spark.sql(create_table_sql)
 spark.sql(merge_sql)
 
-print("Billing aggregation complete with corrected table and column names.")
+print("Historical billing aggregation complete for the specified workspaces.")
