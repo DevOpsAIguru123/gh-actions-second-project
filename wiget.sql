@@ -1,51 +1,27 @@
-– Dataset 1: Static parameter options (for filter widget)
-SELECT * FROM (
+– Time period options (for dropdown population) - Keep this dataset as is
+SELECT
+*
+FROM
 VALUES
 (‘Last Month’),
 (‘Last 3 Months’),
 (‘Last 6 Months’),
 (‘Last 12 Months’)
-) AS time_periods(period_name)
+AS time_periods(period_name);
 
-– Dataset 2: Main data query with parameter
-SELECT
-month_column,
-revenue,
-orders,
-customers,
-– Add other aggregated metrics
-FROM your_monthly_aggregated_table
-WHERE month_column >=
+– Main query with dynamic time filtering (REMOVE the parameter)
+SELECT *
+FROM entai_development_catalog.vinod_databricks_dashboard.monthly_active_users_by_workspace
+WHERE
+to_date(concat(‘year-month’, ‘-01’)) >=
 CASE
-WHEN :time_period_param = ‘Last Month’ THEN
-date_trunc(‘month’, add_months(current_date(), -1))
-WHEN :time_period_param = ‘Last 3 Months’ THEN
-date_trunc(‘month’, add_months(current_date(), -3))
-WHEN :time_period_param = ‘Last 6 Months’ THEN
-date_trunc(‘month’, add_months(current_date(), -6))
-WHEN :time_period_param = ‘Last 12 Months’ THEN
-date_trunc(‘month’, add_months(current_date(), -12))
-ELSE date_trunc(‘month’, add_months(current_date(), -3))
+– This will be controlled by the dropdown filter widget instead of parameter
+WHEN ‘Last Month’ IN (SELECT period_name FROM time_periods) THEN date_trunc(‘month’, add_months(current_date(), -1))
+WHEN ‘Last 3 Months’ IN (SELECT period_name FROM time_periods) THEN date_trunc(‘month’, add_months(current_date(), -3))
+WHEN ‘Last 6 Months’ IN (SELECT period_name FROM time_periods) THEN date_trunc(‘month’, add_months(current_date(), -6))
+WHEN ‘Last 12 Months’ IN (SELECT period_name FROM time_periods) THEN date_trunc(‘month’, add_months(current_date(), -12))
+ELSE date_trunc(‘month’, add_months(current_date(), -3)) – Default to 3 months
 END
-ORDER BY month_column DESC
-
-– Alternative: If your month_column is stored as string (YYYY-MM format)
-SELECT
-month_column,
-revenue,
-orders,
-customers
-FROM your_monthly_aggregated_table
-WHERE month_column >=
-CASE
-WHEN :time_period_param = ‘Last Month’ THEN
-date_format(add_months(current_date(), -1), ‘yyyy-MM’)
-WHEN :time_period_param = ‘Last 3 Months’ THEN
-date_format(add_months(current_date(), -3), ‘yyyy-MM’)
-WHEN :time_period_param = ‘Last 6 Months’ THEN
-date_format(add_months(current_date(), -6), ‘yyyy-MM’)
-WHEN :time_period_param = ‘Last 12 Months’ THEN
-date_format(add_months(current_date(), -12), ‘yyyy-MM’)
-ELSE date_format(add_months(current_date(), -3), ‘yyyy-MM’)
-END
-ORDER BY month_column DESC
+AND to_date(concat(‘year-month’, ‘-01’)) < date_trunc(‘month’, current_date())
+ORDER BY
+‘year-month’ ASC;
