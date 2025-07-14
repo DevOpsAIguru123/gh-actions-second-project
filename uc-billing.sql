@@ -1,4 +1,3 @@
--- Option 2: Create a summary table for faster queries
 CREATE TABLE IF NOT EXISTS monthly_workspace_summary (
   year_month STRING,
   workspace_id STRING,
@@ -8,7 +7,6 @@ CREATE TABLE IF NOT EXISTS monthly_workspace_summary (
   skus_used INT,
   last_updated TIMESTAMP
 ) USING DELTA;
-
 
 -- Insert/Update monthly summaries
 MERGE INTO monthly_workspace_summary t
@@ -37,5 +35,13 @@ USING (
     w.workspace_name
 ) s
 ON t.year_month = s.year_month AND t.workspace_id = s.workspace_id
-WHEN MATCHED THEN UPDATE SET *
-WHEN NOT MATCHED THEN INSERT *
+WHEN MATCHED THEN UPDATE SET 
+  t.workspace_name = s.workspace_name,
+  t.total_cost = s.total_cost,
+  t.products_used = s.products_used,
+  t.skus_used = s.skus_used,
+  t.last_updated = s.last_updated
+WHEN NOT MATCHED THEN INSERT 
+  (year_month, workspace_id, workspace_name, total_cost, products_used, skus_used, last_updated)
+VALUES 
+  (s.year_month, s.workspace_id, s.workspace_name, s.total_cost, s.products_used, s.skus_used, s.last_updated);
