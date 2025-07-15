@@ -164,3 +164,64 @@ ORDER BY
   usage_month DESC,
   total_list_price_usd DESC;
 
+---- tag missing
+WITH prices AS (
+  SELECT
+    *,
+    coalesce(price_end_time, date_add(current_date, 1)) as coalesced_price_end_time
+  FROM
+    system.billing.list_prices
+  WHERE
+    currency_code = 'USD'
+),
+-- This CTE calculates the cost and creates a new, corrected project tag column
+usage_with_corrected_tags AS (
+  SELECT
+    u.usage_date,
+    u.workspace_id,
+    coalesce(u.usage_quantity * p.pricing.effective_list.default, 0) AS list_price_usd,
+    -- ############### EDIT THIS SECTION ###############
+    -- Add a WHEN block for each service principal whose costs you need to re-assign.
+    CASE
+      -- Scenario 1: A specific job owner is found and the 'project' tag is missing.
+      WHEN u.identity_metadata.run_as = 'service-principal-A@your-domain.com' AND u.custom_tags['project'] IS NULL
+        THEN 'Project_Alpha'
+
+      -- Scenario 2: Add another service principal and project.
+      WHEN u.identity_metadata.run_as = 'service-principal-B@your-domain.com' AND u.custom_tags['project'] IS NULL
+        THEN 'Project_Beta'
+        
+      -- For all other records, use the 'project' tag if it exists.
+      ELSE u.custom_tags['project']
+    END AS project_tag
+    -- ###############################################
+  FROM
+    system.billing.usage AS u
+  LEFT JOIN
+    prices AS p
+    ON u.sku_name = p.sku_name
+    AND u.usage_unit = p.usage_unit
+    AND (
+      u.usage_end_time BETWEEN p.price_start_time
+      AND p.coalesced_price_end_time
+    )
+  WHERE
+    -- Optional: You can filter for specific workspaces if needed
+    u.workspace_id IN ('118465356851554', '3471645455711595')
+)
+-- Final aggregation by the new, corrected project tag
+SELECT
+  DATE_TRUNC('MONTH', usage_date) AS usage_month,
+  project_tag,
+  SUM(list_price_usd) AS total_list_price_usd
+FROM
+  usage_with_corrected_tags
+WHERE
+  project_tag IS NOT NULL -- Exclude records that never had a project tag
+GROUP BY
+  usage_month,
+  project_tag
+ORDER BY
+  usage_month DESC,
+  total_list_price_usd DESC;
+
