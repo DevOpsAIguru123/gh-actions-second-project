@@ -1,0 +1,20 @@
+## Dashboard 1: Databricks Platform Overview
+
+• Overall cost tracking and trends
+• Monthly workspace usage metrics
+• Product usage breakdown by service
+• SKU consumption analysis
+
+## Dashboard 2: Granular Cost Analysis
+
+• Time-based cost views (daily/weekly/monthly/yearly)
+• Cost drivers by product, SKU, and project
+• High-cost jobs and cluster analysis
+• Top spending by node type and users
+
+## Dashboard 3: Azure Cost Integration
+
+• Total current month costs
+• Billing period comparisons
+• Cost breakdown by Azure service
+• Top 10 highest-cost resources​​​​​​​​​​​​​​​​
