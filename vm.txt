@@ -1,0 +1,2 @@
+Quick update on the job setup we discussed. Since F-series VMs are still unavailable, I’ve added Microsoft’s new Cobalt Series VMs to our cluster policy. They’re actually cheaper and more performant than the F-series.
+Can you test them out and let me know how they work for you? If they don’t meet our needs, I’ll reach out to Microsoft about getting F-series enabled.
