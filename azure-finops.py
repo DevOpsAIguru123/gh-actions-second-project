@@ -9,8 +9,8 @@ from pyspark.sql.functions import col, date_format
 date_column_for_partitioning = "ChargePeriodStart" 
 
 # Define paths and table name
-source_path = "/Volumes/entai_sandbox_catalog/eai_usage_v1/azurefinops/volume/azurefinops/azurefinops-focus-cost/*/*/*.parquet"
-delta_table_name = "entai_sandbox_catalog.eai_usage_v1.azure_billing_data"
+source_path = ""
+delta_table_name = ""
 
 print(f"Reading historical data from: {source_path}")
 
