@@ -158,3 +158,76 @@ process_month(previous_month_date)
 process_month(current_month_date)
 
 print("\n--- Incremental load finished. ---")
+
+
+
+
+########### Latest #############
+# ============== INCREMENTAL INGESTION NOTEBOOK (WITH MONTH-END CATCH-UP) ==============
+# This robust version processes BOTH the current and previous months on each run.
+# This ensures that the final, complete data for the previous month is captured
+# during the first week of a new month.
+
+import datetime
+from dateutil.relativedelta import relativedelta
+from pyspark.sql.functions import col, lit
+
+# --- 1. Reusable Function to Process a Specific Month ---
+def process_month(month_date):
+    """
+    Reads all parquet files for a given month, and replaces the corresponding
+    partition in the target Delta table.
+    
+    Args:
+        month_date (datetime.date): A date object representing the month to process.
+    """
+    month_str = month_date.strftime("%Y-%m")
+    month_folder_prefix = month_date.strftime("%Y%m")
+    
+    source_path = f"/Volumes/entai_sandbox_catalog/eai_usage_v1/azurefinops/volume/azurefinops/azurefinops-focus-cost/*/{month_folder_prefix}*/*.parquet"
+    delta_table_name = "entai_sandbox_catalog.eai_usage_v1.azure_billing_data"
+
+    print(f"--- Processing month: {month_str} ---")
+    print(f"Reading from source: {source_path}")
+
+    try:
+        df_month = spark.read.parquet(source_path)
+    except Exception as e:
+        # It's normal for a folder not to exist (e.g., no data for the previous month on the very first run).
+        print(f"No data found for month '{month_str}'. Skipping. Error: {e}")
+        return # Exit the function for this month
+
+    if df_month.rdd.isEmpty():
+        print(f"Source directory for month {month_str} is empty. Skipping.")
+        return
+
+    # Prepare DataFrame by adding the partition column
+    df_to_write = df_month.withColumn("year_month", lit(month_str))
+
+    # Atomically replace the data for this specific month's partition
+    print(f"Writing {df_to_write.count()} rows to the '{month_str}' partition...")
+    df_to_write.write \
+      .format("delta") \
+      .mode("overwrite") \
+      .option("replaceWhere", f"year_month = '{month_str}'") \
+      .saveAsTable(delta_table_name)
+      
+    print(f"✅ Successfully updated partition '{month_str}'.")
+
+
+# --- 2. Main Script Logic ---
+# Get today's date
+today = datetime.date.today()
+
+# Define current and previous months
+current_month_date = today
+previous_month_date = today - relativedelta(months=1)
+
+# Process the previous month to catch any final updates
+process_month(previous_month_date)
+
+# Process the current month for the latest month-to-date data
+process_month(current_month_date)
+
+print("\n--- Incremental load finished. ---")
+
