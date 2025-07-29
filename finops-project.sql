@@ -77,3 +77,44 @@ WHERE
 GROUP BY
   Month,
   Project;
+
+########## gpt #########
+  from pyspark.sql import functions as F
+from pyspark.sql.types import MapType, StringType
+
+# Load the raw cost export
+df = spark.table("billingdata")
+
+# Parse the Tags JSON string into a map of key/value pairs.
+# Tags are stored as a JSON object per row:contentReference[oaicite:0]{index=0}, so from_json()
+# turns them into a MapType column for easy access.
+df = df.withColumn(
+    "tags_map",
+    F.from_json("Tags", MapType(StringType(), StringType()))
+)
+
+# Extract the project and creator tags
+df = df.withColumn("project_tag", df.tags_map["project"]) \
+       .withColumn("creator_tag", df.tags_map["creator"])
+
+# Define a normalised project value
+df = df.withColumn(
+    "project_normalised",
+    F.when(df.project_tag.isin("demo11", "demo12"), "demo11")
+     .when(df.project_tag.isin("test11", "test12"), "test11")
+     .when(df.project_tag.isNull() & (df.creator_tag == "y111"), "demo11")
+     .when(df.project_tag.isNull() & (df.creator_tag == "x111"), "test11")
+     .otherwise(df.project_tag)
+)
+
+# Derive the first day of the month from the usage date/time
+df = df.withColumn("month_start", F.trunc("UsageDateTime", "MM"))
+
+# Aggregate costs by month and normalised project name.
+# Replace 'EffectiveCost' with the appropriate cost column (e.g., 'BilledCost')
+agg_df = (df.groupBy("month_start", "project_normalised")
+             .agg(F.sum("EffectiveCost").alias("total_cost"))
+          )
+
+# Persist as a Delta table; overwrite to refresh data each run.
+agg_df.write.format("delta").mode("overwrite").saveAsTable("costproject")
